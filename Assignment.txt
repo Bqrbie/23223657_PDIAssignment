@@ -1,0 +1,409 @@
+TITLE: Assignment Program Pseudocode
+AUTHOR: Bill Ahearne
+DATE: 17 Oct 2025
+PURPOSE: Manage Student Records
+
+BEGIN Assignment
+
+CLASS FIELDS:
+    MAX_STUDENTS (int) = 100
+    studentList (Student[MAX_STUDENTS])
+    studentCount (int) = 0
+
+BEGIN MAIN
+
+    PROMPT "Enter CSV filename (must be in this folder): "
+    READ fileName
+    WHILE TRIM(fileName) = ""
+        PROMPT "Enter CSV filename (must be in this folder): "
+        READ fileName
+    ENDWHILE
+
+    CALL loadStudentsFromFile WITH fileName
+
+    DO
+        CALL menuInterface
+        READ choice
+        CASE TRIM(choice) OF
+            "1": CALL addNewStudent WITH fileName
+            "2": CALL editStudent WITH fileName
+            "3": CALL viewAllStudents
+            "4": CALL filterByCourse
+            "5": CALL filterByStatus
+            "6": CALL highestCWA
+            "7": CALL averageCWAByCourse
+            "8": CALL creditAnalysis
+            "0": PRINT "Goodbye!"
+            DEFAULT: PRINT "Invalid Option"
+        ENDCASE
+    WHILE TRIM(choice) ≠ "0"
+
+    CALL saveStudentsToFile WITH fileName
+
+END MAIN
+
+METHOD: menuInterface
+IMPORT: none
+EXPORT: none
+ASSERTION: Show menu options and prompt for a choice.
+ALGORITHM:
+    PRINT "--------------------------------------------"
+    PRINT "Welcome to the Student Record Manager!"
+    PRINT "--------------------------------------------"
+    PRINT ""
+    PRINT "Please Select an Option"
+    PRINT ""
+    PRINT ">1. Add new student"
+    PRINT ">2. Edit existing student"
+    PRINT ">3. View all students"
+    PRINT ">4. Filter by course"
+    PRINT ">5. Filter by status"
+    PRINT ">6. Highest CWA"
+    PRINT ">7. Average CWA for each course"
+    PRINT ">8. Credit analysis"
+    PRINT ">0. Exit"
+    PRINT ""
+    PRINT "Enter Your Choice: " 
+
+METHOD: loadStudentsFromFile
+IMPORT: fileName (String)
+EXPORT: none
+ASSERTION: Load students from CSV if present; otherwise start with an empty list.
+ALGORITHM:
+    TRY OPEN fileName FOR reading
+        header ← false
+        studentCount ← 0
+        READ line
+        WHILE NOT(EOF)
+            IF header = false
+                THEN header ← true
+                     READ next line
+                     CONTINUE
+            fields ← SPLIT line BY ","
+            IF LENGTH(fields) < 8
+                THEN READ next line
+                     CONTINUE
+            s ← new Student
+            d ← new Details
+            CALL s.setStudentID WITH TRIM(fields[0])
+            IF s.studentID IS null
+                THEN PRINT "Skipping row due to invalid StudentID (must be 1-8 digits)."
+                     READ next line
+                     CONTINUE
+            CALL s.setFirstName WITH TRIM(fields[1])
+            CALL s.setLastName WITH TRIM(fields[2])
+            CALL d.setCourse WITH TRIM(fields[3])
+            CALL d.setYearLevel WITH PARSE_INT(TRIM(fields[4]))
+            CALL d.setCWA WITH PARSE_DOUBLE(TRIM(fields[5]))
+            CALL d.setStatus WITH TRIM(fields[6])
+            CALL d.setCreditsEarned WITH PARSE_INT(TRIM(fields[7]))
+            CALL s.setDetails WITH d
+            IF studentCount < MAX_STUDENTS
+                THEN studentList[studentCount] ← s
+                     studentCount ← studentCount + 1
+            READ next line
+        ENDWHILE
+        PRINT "Data loaded from file: " + fileName
+
+    CATCH ERROR
+        PRINT "Error reading file."
+
+METHOD: saveStudentsToFile
+IMPORT: fileName (String)
+EXPORT: none
+ASSERTION: Persist the current list of students to the CSV file (overwrite).
+ALGORITHM:
+    TRY OPEN fileName FOR writing
+        WRITE "StudentID,FirstName,FamilyName,CourseEnrolled,YearLevel,CWA,Status,CreditsEarned"
+        FOR i FROM 0 TO studentCount - 1
+            s ← studentList[i]
+            d ← s.details
+            WRITE s.studentID + "," + s.firstName + "," + s.lastName + "," + d.course + "," + d.yearLevel + "," + d.CWA + "," + d.status + "," + d.creditsEarned
+    CATCH IO_ERROR:
+        PRINT "Error saving to file."
+
+METHOD: addNewStudent
+IMPORT: fileName (String)
+EXPORT: none
+ASSERTION: Collect, validate, and append a new Student; save immediately.
+ALGORITHM:
+    IF studentCount ≥ MAX_STUDENTS
+        THEN PRINT "Cannot add more students."
+             RETURN.
+    s ← new Student
+    d ← new Details
+
+    PRINT "Enter Student ID (1-8 digits): "
+    studentID ← readStudentID
+    CALL s.setStudentID WITH studentID
+
+    PRINT "Enter First Name: "
+    firstName ← readNonEmptyString
+    CALL s.setFirstName WITH firstName
+
+    PRINT "Enter Last Name: "
+    lastName ← readNonEmptyString
+    CALL s.setLastName WITH lastName
+
+    PRINT "Enter Course Enrolled: "
+    course ← readNonEmptyString
+    CALL d.setCourse WITH course
+
+    yearLevel ← readIntInRange WITH "Year Level (1-4): ", 1, 4
+    CALL d.setYearLevel WITH yearLevel
+
+    CWA ← readDoubleInRange WITH "CWA (0-100): ", 0.0, 100.0
+    CALL d.setCWA WITH CWA
+
+    status ← readStatus WITH "Status (FT/PT): "
+    CALL d.setStatus WITH status
+
+    creditsEarned ← readIntInRange WITH "Credits Earned (0-400): ", 0, 400
+    CALL d.setCreditsEarned WITH creditsEarned
+
+    CALL s.setDetails WITH d
+
+    studentList[studentCount] ← s
+    studentCount ← studentCount + 1
+
+    CALL saveStudentsToFile WITH fileName
+
+    PRINT "Student added."
+
+METHOD: editStudent
+IMPORT: fileName (String)
+EXPORT: none
+ASSERTION: Update selected fields; enforce StudentID checks; save after changes.
+ALGORITHM:
+    REPEAT
+        PRINT "Enter Student ID to edit (1-8 digits): "
+        id ← READ_LINE TRIMMED
+        IF id matches 1..8 digits
+            THEN BREAK
+        PRINT "Invalid Student ID. Must be 1 to 8 digits. Please retype."
+    UNTIL valid
+
+    index ← findStudentIndexByID WITH id
+    IF index = -1
+        THEN PRINT "Student not found."
+             RETURN.
+
+    s ← studentList[index]
+    d ← s.details
+
+    PRINT "New Student ID (1-8 digits, blank to keep): "
+    maybeId ← READ_LINE TRIMMED
+    WHILE maybeId ≠ "" AND NOT(maybeId matches 1..8 digits)
+        PRINT "Invalid Student ID. Must be 1 to 8 digits. Retype (or blank to keep): "
+        maybeId ← READ_LINE TRIMMED
+    IF maybeId ≠ ""
+        THEN CALL s.setStudentID WITH maybeId
+
+    PRINT "New First Name (blank to keep): "
+    maybeFirst ← READ_LINE
+    IF TRIM(maybeFirst) ≠ "" THEN
+        CALL s.setFirstName WITH TRIM(maybeFirst)
+
+    PRINT "New Family Name (blank to keep): "
+    maybeLast ← READ_LINE
+    IF TRIM(maybeLast) ≠ "" THEN
+        CALL s.setLastName WITH TRIM(maybeLast)
+
+    PRINT "New Course Enrolled (blank to keep): "
+    maybeCourse ← READ_LINE
+    IF TRIM(maybeCourse) ≠ "" THEN
+        CALL d.setCourse WITH TRIM(maybeCourse)
+
+    PRINT "New Year Level (1-4, blank to keep): "
+    maybeYear ← READ_LINE
+    IF TRIM(maybeYear) ≠ "" THEN
+        TRY CALL d.setYearLevel WITH PARSE_INT(TRIM(maybeYear)) CATCH ignore
+
+    PRINT "New CWA (0-100, blank to keep): "
+    maybeCWA ← READ_LINE
+    IF TRIM(maybeCWA) ≠ "" THEN
+        TRY CALL d.setCWA WITH PARSE_DOUBLE(TRIM(maybeCWA)) CATCH ignore
+
+    PRINT "New Status (FT/PT, blank to keep): "
+    maybeStatus ← READ_LINE
+    IF TRIM(maybeStatus) ≠ "" THEN
+        CALL d.setStatus WITH TRIM(maybeStatus)
+
+    PRINT "New Credits Earned (0-400, blank to keep): "
+    maybeCredits ← READ_LINE
+    IF TRIM(maybeCredits) ≠ "" THEN
+        TRY CALL d.setCreditsEarned WITH PARSE_INT(TRIM(maybeCredits)) CATCH ignore
+
+    CALL saveStudentsToFile WITH fileName
+
+    PRINT "Student record updated."
+
+METHOD: viewAllStudents
+IMPORT: none
+EXPORT: none
+ASSERTION: Print all students in a tabular format.
+ALGORITHM:
+    PRINT header row
+    FOR i FROM 0 TO studentCount - 1
+        s ← studentList[i]
+        d ← s.details
+        PRINT s.studentID, s.firstName, s.lastName, d.course, d.yearLevel, d.CWA, d.status, d.creditsEarned (formatted)
+
+METHOD: filterByCourse
+IMPORT: none
+EXPORT: none
+ASSERTION: Show students whose course matches a given course
+ALGORITHM:
+    PRINT "Enter course to filter: "
+    course ← READ_LINE TRIMMED
+    found ← false
+    FOR i FROM 0 TO studentCount - 1
+        IF EQUALS_IGNORE_CASE(studentList[i].details.course, course)
+            THEN CALL studentList[i].displayStudent
+                 found ← true
+    IF found = false
+        THEN PRINT "No students found for course: " + course
+
+METHOD: filterByStatus
+IMPORT: none
+EXPORT: none
+ASSERTION: Show students whose status matches FT or PT 
+ALGORITHM:
+    PRINT "Enter status to filter by (FT/PT): "
+    status ← UPPER(TRIM(READ_LINE))
+    found ← false
+    FOR i FROM 0 TO studentCount - 1
+        IF EQUALS_IGNORE_CASE(studentList[i].details.status, status)
+            THEN CALL studentList[i].displayStudent
+                 found ← true
+    IF found = false
+        THEN PRINT "No students found with status: " + status
+
+METHOD: highestCWA
+IMPORT: none
+EXPORT: none
+ASSERTION: Find the highest CWA value and show all students with that CWA.
+ALGORITHM:
+    maxCWA ← -1.0
+    FOR i FROM 0 TO studentCount - 1
+        current ← studentList[i].details.CWA
+        IF current > maxCWA
+            THEN maxCWA ← current
+    PRINT "Student(s) with highest CWA (" + maxCWA + "):"
+    FOR i FROM 0 TO studentCount - 1
+        IF studentList[i].details.CWA = maxCWA
+            THEN CALL studentList[i].displayStudent
+
+METHOD: averageCWAByCourse
+IMPORT: none
+EXPORT: none
+ASSERTION: For each course, print the average CWA across enrolled students.
+ALGORITHM:
+    courses ← empty list
+    FOR i FROM 0 TO studentCount - 1
+        course ← studentList[i].details.course
+        IF course NOT IN courses 
+            THEN ADD course TO courses
+    FOR eachCourse IN courses
+        total ← 0.0
+        count ← 0
+        FOR i FROM 0 TO studentCount - 1
+            IF EQUALS_IGNORE_CASE(studentList[i].details.course, eachCourse)
+                THEN total ← total + studentList[i].details.CWA
+                     count ← count + 1
+        IF count > 0
+            THEN avg ← total / count
+                 PRINT eachCourse + ": " + avg (2 d.p.)
+
+METHOD: creditAnalysis
+IMPORT: none
+EXPORT: none
+ASSERTION: Show students with creditsEarned ≥ 400.
+ALGORITHM:
+    PRINT "Students eligible for graduation (>=400 credits):"
+    found ← false
+    FOR i FROM 0 TO studentCount - 1
+        IF studentList[i].details.creditsEarned ≥ 400
+            THEN CALL studentList[i].displayStudent
+                 found ← true
+    IF found = false
+        THEN PRINT "No students eligible for graduation."
+
+METHOD: findStudentIndexByID
+IMPORT: id (String)
+EXPORT: index (int)
+ASSERTION: Return the array index of the matching student ID (case-insensitive), or -1 if not found.
+ALGORITHM:
+    FOR i FROM 0 TO studentCount - 1
+        IF studentList[i].studentID ≠ null AND EQUALS_IGNORE_CASE(studentList[i].studentID, id)
+            THEN RETURN i.
+    RETURN -1.
+
+METHOD: readNonEmptyString
+IMPORT: prompt (String)
+EXPORT: value (String)
+ASSERTION: Prompt until a non-empty, trimmed string is entered.
+ALGORITHM:
+    REPEAT
+        IF prompt ≠ "" THEN PRINT prompt
+        s ← READ_LINE
+        s ← TRIM(s)
+        IF s ≠ "" THEN RETURN s
+        PRINT "Input cannot be empty, try again."
+    UNTIL false
+
+METHOD: readStudentID
+IMPORT: none (reads from input)
+EXPORT: id (String)
+ASSERTION: Prompt until an ID of 1 to 8 digits is entered.
+ALGORITHM:
+    REPEAT
+        s ← READ_LINE
+        s ← TRIM(s)
+        IF s matches 1..8 digits
+            THEN RETURN s
+        PRINT "Invalid Student ID. Must be 1 to 8 digits. Please re-enter: "
+    UNTIL false
+
+METHOD: readIntInRange
+IMPORT: prompt (String), min (int), max (int)
+EXPORT: val (int)
+ASSERTION: Prompt until an integer within [min..max] is entered.
+ALGORITHM:
+    REPEAT
+        PRINT prompt
+        s ← READ_LINE
+        TRY val ← PARSE_INT(TRIM(s))
+            IF val ≥ min AND val ≤ max THEN RETURN val
+        CATCH ignore
+        PRINT "Invalid, must be between " + min + " and " + max + "."
+    UNTIL false
+
+METHOD: readDoubleInRange
+IMPORT: prompt (String), min (double), max (double)
+EXPORT: val (double)
+ASSERTION: Prompt until a number within [min..max] is entered.
+ALGORITHM:
+    REPEAT
+        PRINT prompt
+        s ← READ_LINE
+        TRY val ← PARSE_DOUBLE(TRIM(s))
+            IF val ≥ min AND val ≤ max THEN RETURN val
+        CATCH ignore
+        PRINT "Invalid, must be between " + min + " and " + max + "."
+    UNTIL false
+
+METHOD: readStatus
+IMPORT: prompt (String)
+EXPORT: value (String)
+ASSERTION: Prompt until the value is FT or PT (any case), and return uppercase.
+ALGORITHM:
+    REPEAT
+        PRINT prompt
+        s ← READ_LINE
+        IF s ≠ null AND (UPPER(TRIM(s)) = "FT" OR UPPER(TRIM(s)) = "PT")
+            THEN RETURN UPPER(TRIM(s))
+        PRINT "Must be FT or PT."
+    UNTIL false
+    
+END Assignment
