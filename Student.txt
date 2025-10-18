@@ -1,0 +1,96 @@
+CLASS STUDENT
+	CLASS FIELDS:
+    	studentID (String)
+    	firstName (String)
+    	lastName (String)
+    	details (Details)
+
+CONSTRUCTOR: Student
+IMPORT: none
+EXPORT: Student
+ASSERTION: Starts each Student with a new, empty Details record.
+ALGORITHM:
+    Create a new Details record and assign it to details.
+    Leave studentID, firstName, and lastName empty until they are set.
+
+ACCESSOR: getStudentID
+IMPORT: none
+EXPORT: studentID (String)
+ASSERTION: Provide the current studentID.
+ALGORITHM:
+    RETURN studentID.
+
+ACCESSOR: getFirstName
+IMPORT: none
+EXPORT: firstName (String)
+ASSERTION: Provide the current firstName.
+ALGORITHM:
+    RETURN firstName.
+
+ACCESSOR: getLastName
+IMPORT: none
+EXPORT: lastName (String)
+ASSERTION: Provide the current lastName.
+ALGORITHM:
+    RETURN lastName.
+
+ACCESSOR: getDetails
+IMPORT: none
+EXPORT: details (Details)
+ASSERTION: Provide the academic details record.
+ALGORITHM:
+    RETURN details.
+
+MUTATOR: setStudentID
+IMPORT: newID (String)
+EXPORT: none
+ASSERTION: Only accept newID of 1 to 8 digits (numbers only); otherwise, do not change studentID.
+ALGORITHM:
+    TRIM newID.
+    IF newID matches the pattern of 1..8 digits
+        THEN studentID ← newID.
+    ELSE PRINT "Invalid Student ID. It must be 1 to 8 digits (numbers only)."
+
+MUTATOR: setFirstName
+IMPORT: newFirst (String)
+EXPORT: none
+ASSERTION: Only accept a non-empty newFirst; otherwise, do not change firstName.
+ALGORITHM:
+    IF newFirst is empty AFTER TRIM
+        THEN PRINT "First name cannot be empty."
+             RETURN.
+    firstName ← newFirst.
+
+MUTATOR: setLastName
+IMPORT: newLast (String)
+EXPORT: none
+ASSERTION: Only accept a non-empty newLast; otherwise, do not change lastName.
+ALGORITHM:
+    IF newLast is empty AFTER TRIM
+        THEN PRINT "Last name cannot be empty."
+             RETURN.
+    lastName ← newLast.
+
+MUTATOR: setDetails
+IMPORT: newDetails (Details)
+EXPORT: none
+ASSERTION: Only accept a non-null newDetails; otherwise, do not change details.
+ALGORITHM:
+    IF newDetails is null
+        THEN PRINT "Details record cannot be empty."
+             RETURN.
+    details ← newDetails.
+
+METHOD: displayStudent
+IMPORT: none
+EXPORT: none
+ASSERTION: Show a readable summary of this student.
+ALGORITHM:
+    PRINT "================================="
+    PRINT "Student ID: " + studentID
+    PRINT "Name: " + firstName + " " + lastName
+    PRINT "Academic Details: "
+    CALL details.displayDetails
+    PRINT "================================="
+
+END Student

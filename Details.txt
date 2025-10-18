@@ -1,0 +1,100 @@
+CLASS Details
+   CLASS FIELDS:
+      course (String)
+      yearLevel (int)            // 1 to 4
+      CWA (double)               // 0 to 100
+      status (String)            // "FT" or "PT"
+      creditsEarned (int)        // 0 to 400
+
+ACCESSOR: getCourse
+IMPORT: none
+EXPORT: course (String)
+ASSERTION: Provide the current course value.
+ALGORITHM:
+    RETURN course.
+
+ACCESSOR: getYearLevel
+IMPORT: none
+EXPORT: yearLevel (int)
+ASSERTION: Provide the current yearLevel value.
+ALGORITHM:
+    RETURN yearLevel.
+
+ACCESSOR: getCWA
+IMPORT: none
+EXPORT: CWA (double)
+ASSERTION: Provide the current CWA value.
+ALGORITHM:
+    RETURN CWA.
+
+ACCESSOR: getStatus
+IMPORT: none
+EXPORT: status (String)
+ASSERTION: Provide the current status ("FT" or "PT").
+ALGORITHM:
+    RETURN status.
+
+ACCESSOR: getCreditsEarned
+IMPORT: none
+EXPORT: creditsEarned (int)
+ASSERTION: Provide the current creditsEarned value.
+ALGORITHM:
+    RETURN creditsEarned.
+
+MUTATOR: setCourse
+IMPORT: newCourse (String)
+EXPORT: none
+ASSERTION: Only accept a non-empty newCourse; otherwise, do not change course.
+ALGORITHM:
+    IF newCourse is empty AFTER TRIM
+        THEN PRINT "Course name cannot be empty."
+             RETURN.
+    course ← newCourse.
+
+MUTATOR: setYearLevel
+IMPORT: newYear (int)
+EXPORT: none
+ASSERTION: Only accept newYear in the range 1..4; otherwise, do not change yearLevel.
+ALGORITHM:
+    IF newYear < 1 OR newYear > 4
+        THEN PRINT "Invalid year level entered (must be between 1 and 4)."
+             RETURN.
+    yearLevel ← newYear.
+
+MUTATOR: setCWA
+IMPORT: newCWA (double)
+EXPORT: none
+ASSERTION: Only accept newCWA in the range 0..100; otherwise, do not change CWA.
+ALGORITHM:
+    IF newCWA < 0 OR newCWA > 100
+        THEN PRINT "CWA must be between 0 and 100."
+             RETURN.
+    CWA ← newCWA.
+
+MUTATOR: setStatus
+IMPORT: newStatus (String)
+EXPORT: none
+ASSERTION: Only accept "FT" or "PT" (any case); otherwise, do not change status.
+ALGORITHM:
+    IF UPPER(TRIM(newStatus)) = "FT" OR UPPER(TRIM(newStatus)) = "PT"
+        THEN status ← UPPER(TRIM(newStatus)).
+    ELSE PRINT "Status must be FT (Full Time) or PT (Part Time)."
+
+MUTATOR: setCreditsEarned
+IMPORT: newCredits (int)
+EXPORT: none
+ASSERTION: Only accept newCredits in the range 0..400; otherwise, do not change creditsEarned.
+ALGORITHM:
+    IF newCredits < 0 OR newCredits > 400
+        THEN PRINT "Credits must be between 0 and 400."
+             RETURN.
+    creditsEarned ← newCredits.
+
+METHOD: displayDetails
+IMPORT: none
+EXPORT: none
+ASSERTION: Print a one-line summary of academic details.
+ALGORITHM:
+    PRINT "Course: " + course + ", Year Level: " + yearLevel + ", CWA: " + CWA + ", Status: " + status + ", Credits Earned: " + creditsEarned
+
+END Details
